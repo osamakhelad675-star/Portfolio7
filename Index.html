@@ -170,6 +170,7 @@
             justify-content: center;
             color: #adadad;
             font-size: 1.3rem;
+            text-decoration: none;  /* REMOVED UNDERLINE FOR SOCIAL ICONS */
             transition: all 0.3s;
         }
         .social-icon:hover {
@@ -309,12 +310,16 @@
             border: 1px solid rgba(160,160,160,0.5);
             max-width: 85vw;
             max-height: 85vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         .lightbox-content img {
             max-width: 100%;
             max-height: 70vh;
             border-radius: 20px;
             filter: grayscale(100%);
+            object-fit: contain;
         }
         .lightbox-close {
             position: absolute;
@@ -366,7 +371,7 @@
 <!-- Lightbox -->
 <div id="lightbox" class="lightbox">
     <div class="lightbox-content">
-        <img id="lightboxImg" src="" alt="Preview">
+        <img id="lightboxImg" src="" alt="Certificate Preview">
         <button class="lightbox-close" id="closeLightboxBtn"><i class="fas fa-times-circle"></i></button>
     </div>
 </div>
@@ -385,10 +390,10 @@
         <div class="hero-tagline">Business Development Strategist</div>
         <p class="hero-desc">Passionate about transforming ideas into structured business models, market expansion strategies, and data-driven growth plans. Academic excellence in business strategy and entrepreneurship.</p>
         <div class="social-links">
-            <a href="#" class="social-icon"><i class="fab fa-linkedin-in"></i></a>
-            <a href="#" class="social-icon"><i class="fab fa-github"></i></a>
-            <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
-            <a href="#" class="social-icon"><i class="fas fa-envelope"></i></a>
+            <a href="#" class="social-icon" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+            <a href="#" class="social-icon" aria-label="GitHub"><i class="fab fa-github"></i></a>
+            <a href="#" class="social-icon" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-icon" aria-label="Email"><i class="fas fa-envelope"></i></a>
         </div>
     </section>
 
@@ -406,9 +411,10 @@
     <section class="reveal">
         <div class="section-header">
             <h2 class="section-title">Certifications & Training</h2>
-            <p style="color:#9b9b9b; font-size:0.8rem;"><i class="fas fa-search-plus"></i> Click any card to view certificate</p>
+            <p style="color:#9b9b9b; font-size:0.8rem;"><i class="fas fa-search-plus"></i> Click any card to view certificate image</p>
         </div>
         <div class="grid-2col">
+            <!-- All certificates using local storage images from the same folder -->
             <div class="glass-card clickable" data-img="DM.jpg" data-name="Digital Marketing">
                 <div class="card-icon"><i class="fas fa-chart-line"></i></div>
                 <h3 class="card-title">Digital Marketing</h3>
@@ -446,9 +452,10 @@
     <section class="reveal">
         <div class="section-header">
             <h2 class="section-title">Academic Projects & Case Studies</h2>
-            <p style="color:#9b9b9b;"><i class="fas fa-microchip"></i> Simulated business scenarios & strategic plans</p>
+            <p style="color:#9b9b9b;"><i class="fas fa-microchip"></i> Simulated business scenarios & strategic plans (click cards)</p>
         </div>
         <div class="grid-2col">
+            <!-- all project images will be loaded from local folder (same directory) -->
             <div class="glass-card clickable" data-project="true" data-img="project_growth_model.jpg" data-name="Growth Model for a Fintech Startup">
                 <div class="card-icon"><i class="fas fa-rocket"></i></div>
                 <h3 class="card-title">Fintech Expansion Strategy</h3>
@@ -494,7 +501,7 @@
 
 <script>
     (function(){
-        // reveal animation
+        // REVEAL ANIMATION
         const reveals = document.querySelectorAll('.reveal');
         const obs = new IntersectionObserver((entries) => {
             entries.forEach(e => {
@@ -506,34 +513,99 @@
         }, {threshold:0.1, rootMargin:"0px 0px -40px 0px"});
         reveals.forEach(r => obs.observe(r));
 
-        // Lightbox system for certificates & projects
+        // LIGHTBOX SYSTEM (local images from folder - data-img attribute)
         const lightbox = document.getElementById('lightbox');
         const lightboxImg = document.getElementById('lightboxImg');
+        
         const closeLightbox = () => {
             lightbox.classList.remove('active');
             document.body.style.overflow = '';
+            lightboxImg.src = ''; // clear source to avoid flickering
         };
+        
         document.getElementById('closeLightboxBtn').addEventListener('click', closeLightbox);
-        lightbox.addEventListener('click', (e) => { if(e.target === lightbox) closeLightbox(); });
+        lightbox.addEventListener('click', (e) => { 
+            if(e.target === lightbox) closeLightbox(); 
+        });
 
+        // Helper to load image with error fallback (local storage friendly)
+        function loadLocalImage(imgPath, cardTitle) {
+            // imgPath is relative like "DM.jpg" or "project_growth_model.jpg"
+            // we use it directly - no placeholder. If image fails 404 we show a fallback text-based canvas?
+            // To improve UX: if image fails to load, we show a fallback gray image with text.
+            const img = new Image();
+            img.onload = () => {
+                lightboxImg.src = imgPath;
+                lightbox.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            };
+            img.onerror = () => {
+                // graceful fallback: generate a simple canvas-based "Certificate Not Found" placeholder but keeping monochrome style
+                const canvasFallback = document.createElement('canvas');
+                const ctxFallback = canvasFallback.getContext('2d');
+                canvasFallback.width = 800;
+                canvasFallback.height = 600;
+                ctxFallback.fillStyle = '#111111';
+                ctxFallback.fillRect(0, 0, canvasFallback.width, canvasFallback.height);
+                ctxFallback.fillStyle = '#aaaaaa';
+                ctxFallback.font = '24px "Inter", monospace';
+                ctxFallback.textAlign = 'center';
+                ctxFallback.fillText('Preview not available', canvasFallback.width/2, canvasFallback.height/2 - 20);
+                ctxFallback.font = '18px "Inter"';
+                ctxFallback.fillStyle = '#9ca3af';
+                ctxFallback.fillText(`"${cardTitle}" image missing in folder`, canvasFallback.width/2, canvasFallback.height/2 + 30);
+                ctxFallback.fillStyle = '#6b7280';
+                ctxFallback.font = '14px monospace';
+                ctxFallback.fillText(`Expected file: ${imgPath}`, canvasFallback.width/2, canvasFallback.height/2 + 80);
+                const fallbackDataURL = canvasFallback.toDataURL('image/png');
+                lightboxImg.src = fallbackDataURL;
+                lightbox.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            };
+            img.src = imgPath;
+        }
+
+        // Attach click events to all cards with data-img attribute
         const clickableCards = document.querySelectorAll('.clickable');
         clickableCards.forEach(card => {
             card.addEventListener('click', (e) => {
                 e.stopPropagation();
                 let imgSrc = card.getAttribute('data-img');
-                let name = card.getAttribute('data-name');
+                let name = card.getAttribute('data-name') || (card.querySelector('.card-title') ? card.querySelector('.card-title').innerText : 'Document');
+                
                 if (!imgSrc) {
-                    const titleEl = card.querySelector('.card-title');
-                    const fallbackText = titleEl ? titleEl.innerText : 'Document';
-                    imgSrc = `https://placehold.co/800x600/1a1a1a/aaaaaa?text=${encodeURIComponent(fallbackText)}`;
+                    // fallback: create a styled fallback with name
+                    const canvasPlaceholder = document.createElement('canvas');
+                    const ctxPlace = canvasPlaceholder.getContext('2d');
+                    canvasPlaceholder.width = 800;
+                    canvasPlaceholder.height = 500;
+                    ctxPlace.fillStyle = '#1a1a1a';
+                    ctxPlace.fillRect(0, 0, canvasPlaceholder.width, canvasPlaceholder.height);
+                    ctxPlace.fillStyle = '#d4d4d4';
+                    ctxPlace.font = 'bold 26px "Inter", sans-serif';
+                    ctxPlace.textAlign = 'center';
+                    ctxPlace.fillText(name, canvasPlaceholder.width/2, canvasPlaceholder.height/2 - 30);
+                    ctxPlace.font = '18px "Inter"';
+                    ctxPlace.fillStyle = '#9ca3af';
+                    ctxPlace.fillText('No image reference provided', canvasPlaceholder.width/2, canvasPlaceholder.height/2 + 30);
+                    ctxPlace.fillStyle = '#6c6f7e';
+                    ctxPlace.font = '14px monospace';
+                    ctxPlace.fillText('Add data-img="filename.jpg" attribute', canvasPlaceholder.width/2, canvasPlaceholder.height/2 + 80);
+                    const fallbackURL = canvasPlaceholder.toDataURL('image/png');
+                    lightboxImg.src = fallbackURL;
+                    lightbox.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                    return;
                 }
-                lightboxImg.src = imgSrc;
-                lightbox.classList.add('active');
-                document.body.style.overflow = 'hidden';
+                
+                // direct local path: the imgSrc is exactly the filename like "DM.jpg", "BD.jpg", "project_growth_model.jpg"
+                // they reside in the same folder as the HTML file. Use relative path.
+                loadLocalImage(imgSrc, name);
             });
         });
 
-        // --- MONOCHROME TECH NETWORK CANVAS ---
+        // ------------------------------
+        // MONOCHROME TECH NETWORK CANVAS (preserved exactly)
         const canvas = document.getElementById('techCanvas');
         const ctx = canvas.getContext('2d');
         let w, h;
@@ -541,7 +613,6 @@
         let edges = [];
         let dataPackets = [];
         let mouseX = -1000, mouseY = -1000;
-        let frame;
 
         function resizeCanvas() {
             w = window.innerWidth;
@@ -570,7 +641,6 @@
                     });
                 }
             }
-            // connect neighbors
             for (let i=0; i<rows; i++) {
                 for (let j=0; j<cols; j++) {
                     const idx = i*cols + j;
@@ -578,7 +648,6 @@
                     if (i+1 < rows) edges.push({ from: idx, to: (i+1)*cols + j });
                 }
             }
-            // create data packets
             dataPackets = [];
             for (let p=0; p<32; p++) {
                 if (edges.length === 0) break;
@@ -603,7 +672,6 @@
             if (!ctx) return;
             ctx.clearRect(0, 0, w, h);
             const time = Date.now() * 0.002;
-            // update node positions
             for (let n of nodes) {
                 n.x = n.origX + Math.sin(time * 0.6 + n.phaseX) * 1.4;
                 n.y = n.origY + Math.cos(time * 0.5 + n.phaseY) * 1.4;
@@ -619,7 +687,6 @@
                     n.glow = Math.max(0, n.glow - 0.03);
                 }
             }
-            // draw connections
             for (let e of edges) {
                 const n1 = nodes[e.from];
                 const n2 = nodes[e.to];
@@ -640,7 +707,6 @@
                 ctx.lineWidth = 0.7;
                 ctx.stroke();
             }
-            // draw nodes
             for (let n of nodes) {
                 const rad = 2.6 + n.glow * 2.0;
                 ctx.shadowBlur = 12;
@@ -661,7 +727,6 @@
                     ctx.fill();
                 }
             }
-            // data packets
             for (let p of dataPackets) {
                 const fromNode = nodes[p.fromIdx];
                 const toNode = nodes[p.toIdx];
